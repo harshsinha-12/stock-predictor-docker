@@ -14,21 +14,18 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import base64
 
-# Set page config
 st.set_page_config(
     page_title="Stock Price Movement Predictor",
     page_icon="📈",
     layout="wide"
 )
 
-# Define global variables at the top level
 model = None
 scaler = None
 model_trained = False
 model_path = 'stock_model.pkl'
 scaler_path = 'scaler.pkl'
 
-# Apply custom CSS
 def load_css():
     """Load and apply custom CSS styling"""
     if os.path.exists('static/style.css'):
@@ -37,7 +34,6 @@ def load_css():
     else:
         st.warning("Custom styling file not found. Using default styling.")
 
-# Check if model exists
 if os.path.exists(model_path) and os.path.exists(scaler_path):
     with open(model_path, 'rb') as f:
         model = pickle.load(f)
@@ -147,7 +143,6 @@ def train_model(ticker, n_estimators=100, max_depth=None, min_samples_split=2):
     with open(scaler_path, 'wb') as f:
         pickle.dump(scaler, f)
     
-    # Use the parameters passed from the UI
     model = RandomForestClassifier(
         n_estimators=n_estimators,
         max_depth=max_depth,
@@ -158,11 +153,7 @@ def train_model(ticker, n_estimators=100, max_depth=None, min_samples_split=2):
     
     with open(model_path, 'wb') as f:
         pickle.dump(model, f)
-    
-    # Use 5-fold cross validation to get model performance metrics
     cv_scores = cross_val_score(model, X_scaled, y, cv=5)
-    
-    # Set model_trained flag
     model_trained = True
     
     return {
@@ -179,7 +170,6 @@ def train_model(ticker, n_estimators=100, max_depth=None, min_samples_split=2):
 
 def plot_stock_data(data, ticker):
     """Plot stock data with moving averages using Plotly"""
-    # Create subplots: price and volume
     fig = make_subplots(
         rows=2, 
         cols=1,
@@ -188,8 +178,6 @@ def plot_stock_data(data, ticker):
         subplot_titles=(f'{ticker} Stock Price', 'Trading Volume'),
         row_width=[0.7, 0.3]
     )
-    
-    # Add price traces
     fig.add_trace(
         go.Scatter(
             x=data['Date'],
@@ -219,8 +207,6 @@ def plot_stock_data(data, ticker):
         ),
         row=1, col=1
     )
-    
-    # Add volume trace
     fig.add_trace(
         go.Bar(
             x=data['Date'],
@@ -230,8 +216,6 @@ def plot_stock_data(data, ticker):
         ),
         row=2, col=1
     )
-    
-    # Update layout
     fig.update_layout(
         height=600,
         hovermode='x unified',
@@ -249,40 +233,26 @@ def plot_stock_data(data, ticker):
     fig.update_yaxes(title_text="Volume", row=2, col=1)
     
     return fig
-
-# Apply the CSS
 load_css()
-
-# Header with custom styling
 st.markdown("<h1 class='main-header'>Stock Price Movement Predictor</h1>", unsafe_allow_html=True)
 st.markdown("### Predict tomorrow's stock movement with machine learning")
-
-# Sidebar
 with st.sidebar:
-    st.image("https://img.icons8.com/fluency/96/000000/stock-market.png", width=80)
     st.title('Navigation')
     app_mode = st.radio('Choose Mode', ['Predict Stock Movement', 'Train Model'])
     
     st.markdown("---")
     st.markdown("### About")
     st.info("This application predicts stock price movements using historical data and machine learning.")
-    
-    # Model status
     st.markdown("### Model Status")
     if model_trained:
         st.success("Model is trained and ready for predictions")
     else:
         st.warning("Model not trained. Please train the model first.")
-
-# Main content based on selected mode
 if app_mode == 'Predict Stock Movement':
-    # Create a container with a card-like appearance
     main_container = st.container()
     with main_container:
         col1, col2 = st.columns([2, 1])
-        
         with col1:
-            # User input in a form
             with st.form("stock_input_form"):
                 ticker = st.text_input('Enter Stock Ticker (e.g., AAPL, MSFT, GOOG)', 'AAPL')
                 period = st.select_slider('Select Period for Analysis', options=['3mo', '1y', '5y'], value='1y')
@@ -292,7 +262,6 @@ if app_mode == 'Predict Stock Movement':
                     analyze_button = st.form_submit_button('Analyze Stock')
                 with col2_form:
                     predict_button = st.form_submit_button('Predict Movement')
-        
         with col2:
             st.markdown("### Popular Tickers")
             popular_tickers = {
@@ -310,31 +279,21 @@ if app_mode == 'Predict Stock Movement':
                         ticker = tick
                         st.experimental_rerun()
     
-    # Analysis section
     analysis_container = st.container()
     with analysis_container:
         if analyze_button or 'ticker' in locals():
-            # Fetch and display stock data
             with st.spinner('Fetching stock data...'):
                 ticker_to_use = ticker if 'ticker' in locals() else 'AAPL'
                 stock_data = fetch_stock_data(ticker_to_use, period)
                 if stock_data is not None:
                     st.success(f'Successfully fetched data for {ticker_to_use}')
-                    
-                    # Create features and plot
                     features_df = create_features(stock_data)
-                    
-                    # Display the interactive plot
                     st.markdown("<div class='chart-container'>", unsafe_allow_html=True)
                     fig = plot_stock_data(features_df, ticker_to_use)
                     st.plotly_chart(fig, use_container_width=True)
                     st.markdown("</div>", unsafe_allow_html=True)
-                    
-                    # Display recent data in an expandable section
                     with st.expander("View Recent Data"):
                         st.dataframe(stock_data.tail(), use_container_width=True)
-                        
-                        # Add summary statistics
                         st.markdown("### Summary Statistics")
                         stats_cols = st.columns(4)
                         with stats_cols[0]:
@@ -347,7 +306,6 @@ if app_mode == 'Predict Stock Movement':
                         with stats_cols[3]:
                             st.metric("Volume: ", f"{stock_data['Volume'].iloc[-1]:,.0f}")
 
-    # Prediction section
     prediction_container = st.container()
     with prediction_container:
         if predict_button:
@@ -357,11 +315,9 @@ if app_mode == 'Predict Stock Movement':
                 with st.spinner('Predicting...'):
                     result = predict_next_day(ticker)
                     if result:
-                        # Create a nice card for prediction result
                         st.markdown("<div class='card'>", unsafe_allow_html=True)
                         st.subheader('Prediction Result')
                         
-                        # Display prediction with nice formatting
                         movement_class = "prediction-up" if result['predicted_movement'] == 'UP' else "prediction-down"
                         confidence_pct = f"{result['confidence']*100:.2f}%"
                         
@@ -377,11 +333,8 @@ if app_mode == 'Predict Stock Movement':
                             """, unsafe_allow_html=True)
                         
                         with col2_pred:
-                            # Gauge chart for confidence
                             st.subheader('Prediction Confidence')
                             st.progress(result['confidence'])
-                            
-                            # Add emojis for better visual cues
                             if result['predicted_movement'] == 'UP':
                                 st.markdown("### 📈 Bullish Signal")
                             else:
@@ -391,8 +344,6 @@ if app_mode == 'Predict Stock Movement':
 
 elif app_mode == 'Train Model':
     st.markdown("<h2 class='main-header'>Train Stock Prediction Model</h2>", unsafe_allow_html=True)
-    
-    # Create two columns layout
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -408,38 +359,27 @@ elif app_mode == 'Train Model':
         4. Trains a Random Forest classifier model on the data
         5. Saves the model for future predictions
         """)
-        
-        # Model parameters in expander
         with st.expander("Advanced Model Configuration"):
             n_estimators = st.slider("Number of Trees in Forest", 50, 500, 100, 10)
             max_depth = st.slider("Maximum Depth of Trees", 2, 30, 10, 1)
             min_samples_split = st.slider("Minimum Samples to Split", 2, 20, 2, 1)
-        
-        # Input form
         with st.form("train_model_form"):
             ticker = st.text_input('Enter Stock Ticker for Training', 'AAPL')
             train_button = st.form_submit_button('Train New Model')
         
         if train_button:
-            # Progress indicators
             progress_bar = st.progress(0)
             status_text = st.empty()
-            
-            # Simulate stages of training with progress updates
             status_text.text("Fetching historical data...")
             progress_bar.progress(10)
             
-            # Start training
             with st.spinner('Training model... This may take a moment.'):
-                # Override the default model parameters
                 if 'n_estimators' in locals():
-                    # We'll modify the train_model function slightly to use these parameters
                     result = train_model(ticker, n_estimators, max_depth, min_samples_split)
                 else:
                     result = train_model(ticker)
                 
                 if result:
-                    # Update progress through the process
                     status_text.text("Processing features...")
                     progress_bar.progress(40)
                     status_text.text("Training model...")
@@ -449,17 +389,14 @@ elif app_mode == 'Train Model':
                     status_text.text("Complete!")
                     progress_bar.progress(100)
                     
-                    # Success message
                     st.success(f"Model trained successfully on {result['ticker']} with {result['data_points']} data points")
                     st.balloons()
     
     with col2:
         st.markdown("### Model Information")
         
-        # Display model status
         if model_trained:
             st.success("Model Status: Trained")
-            # Display feature importance if model exists
             if model is not None:
                 st.markdown("#### Feature Importance")
                 feature_names = ['MA5', 'MA20', 'Return', 'MA5_Return', 'MA20_Return']
@@ -468,7 +405,6 @@ elif app_mode == 'Train Model':
                     'Importance': model.feature_importances_
                 }).sort_values('Importance', ascending=False)
                 
-                # Create a horizontal bar chart for feature importance
                 fig = go.Figure()
                 fig.add_trace(go.Bar(
                     x=importance_df['Importance'],
@@ -487,7 +423,6 @@ elif app_mode == 'Train Model':
             st.warning("Model Status: Not Trained")
             st.info("Train a model to see feature importance and metrics.")
 
-# Footer
 st.sidebar.markdown('---')
 st.sidebar.markdown("""
 ### Technologies Used
@@ -499,7 +434,6 @@ st.sidebar.markdown("""
 """)
 st.sidebar.info('Stock Price Movement Predictor © 2025')
 
-# Add a disclaimer at the bottom
 st.markdown('---')
 st.caption("""
 **Disclaimer**: This application is for educational purposes only. 

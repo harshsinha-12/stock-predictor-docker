@@ -21,6 +21,12 @@ This is a machine learning-based application that predicts stock price movements
 
 ## Quick Start
 
+### Live Demo
+
+Try the Streamlit application online: [Stock Predictor App](https://stock-predictor-docker.streamlit.app/)
+
+### Local Setup
+
 1. Clone or download this repository
 2. Navigate to the project directory
 3. Choose your preferred method to run the application:
@@ -63,7 +69,7 @@ streamlit run streamlit_app.py
 2. Enter a stock ticker symbol (e.g., AAPL for Apple) and click "Predict"
 
 ### Streamlit UI
-1. Open your web browser and navigate to `http://localhost:8501`
+1. Open your web browser and navigate to `http://localhost:8501` (or visit the [live demo](https://stock-predictor-docker.streamlit.app/))
 2. Choose between "Predict Stock Movement" and "Train Model" modes
 3. Enter a stock ticker and use the interactive controls
 
