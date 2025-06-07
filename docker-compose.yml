@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  stock-predictor-flask:
+    build: .
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    environment:
+      - PORT=5001
