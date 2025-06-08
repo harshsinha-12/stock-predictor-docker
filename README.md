@@ -97,7 +97,7 @@ The application needs to train a model before it can make predictions.
 
 #### Flask Application
 ```bash
-docker run -p 5001:5001 harshsinha12/stock-predictor-flask
+docker run -p 5001:5001 harshsinha12/stock-predictor
 ```
 
 ## Disclaimer
